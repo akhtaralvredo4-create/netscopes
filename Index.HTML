@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Information</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f2f2f2;
+  color: #222;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+header {
+  background: #292929;
+  color: white;
+  padding: 16px;
+}
+
+header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+header p {
+  margin: 6px 0 0;
+  color: #ccc;
+}
+
+main {
+  max-width: 650px;
+  margin: 20px auto;
+  padding: 0 12px;
+}
+
+.panel {
+  background: white;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+  padding: 16px;
+}
+
+.panel h3 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  color: #666;
+}
+
+.value {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+button {
+  padding: 11px 15px;
+  border: 1px solid #aaa;
+  background: #eee;
+  color: #222;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 0 6px 10px 0;
+}
+
+button:active {
+  background: #ddd;
+}
+
+.note {
+  color: #666;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+footer {
+  padding: 16px 0;
+  color: #777;
+  font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h2>Network Information</h2>
+  <p>Connection and device details</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h3>IP Information</h3>
+    <div class="row">
+      <span class="label">Public IP</span>
+      <span class="value" id="ip">Not checked</span>
+    </div>
+    <div class="row">
+      <span class="label">Approximate location</span>
+      <span class="value" id="location">Unknown</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>Device Information</h3>
+    <div class="row">
+      <span class="label">Operating system</span>
+      <span class="value" id="os">Unknown</span>
+    </div>
+    <div class="row">
+      <span class="label">Browser</span>
+      <span class="value" id="browser">Unknown</span>
+    </div>
+    <div class="row">
+      <span class="label">Screen size</span>
+      <span class="value" id="screen"></span>
+    </div>
+    <div class="row">
+      <span class="label">Connection</span>
+      <span class="value" id="connection"></span>
+    </div>
+    <div class="row">
+      <span class="label">Wi-Fi name</span>
+      <span class="value">Not available</span>
+    </div>
+  </section>
+
+  <button onclick="checkIP()">Check IP</button>
+  <button onclick="copyInfo()">Copy details</button>
+
+  <p class="note">
+    IP lookup uses an external service when you press Check IP.
+    Location is approximate. This page cannot read your Wi-Fi
+    password or network name through a standard browser.
+  </p>
+
+  <footer>Network Information Tool</footer>
+</main>
+
+<script>
+const ua = navigator.userAgent;
+
+document.getElementById("os").textContent =
+  /Android/i.test(ua) ? "Android" :
+  /iPhone|iPad|iPod/i.test(ua) ? "iOS" :
+  /Windows/i.test(ua) ? "Windows" :
+  /Macintosh|Mac OS/i.test(ua) ? "macOS" :
+  /Linux/i.test(ua) ? "Linux" : "Unknown";
+
+document.getElementById("browser").textContent =
+  /Edg\//i.test(ua) ? "Edge" :
+  /Firefox\//i.test(ua) ? "Firefox" :
+  /Chrome\//i.test(ua) ? "Chrome" :
+  /Safari\//i.test(ua) ? "Safari" : "Unknown";
+
+document.getElementById("screen").textContent =
+  screen.width + " × " + screen.height;
+
+document.getElementById("connection").textContent =
+  navigator.onLine ? "Online" : "Offline";
+
+let ip = "Not checked";
+let locationInfo = "Unknown";
+
+async function checkIP() {
+  document.getElementById("ip").textContent = "Loading...";
+
+  try {
+    const response = await fetch("https://ipapi.co/json/");
+    if (!response.ok) throw new Error("Request failed");
+
+    const data = await response.json();
+
+    ip = data.ip || "Unavailable";
+    locationInfo = [
+      data.city,
+      data.region,
+      data.country_name
+    ].filter(Boolean).join(", ") || "Unknown";
+
+    document.getElementById("ip").textContent = ip;
+    document.getElementById("location").textContent = locationInfo;
+  } catch {
+    ip = "Lookup failed";
+    document.getElementById("ip").textContent = ip;
+    document.getElementById("location").textContent = "Unavailable";
+  }
+}
+
+async function copyInfo() {
+  const details = [
+    "Public IP: " + ip,
+    "Location: " + locationInfo,
+    "Operating system: " + document.getElementById("os").textContent,
+    "Browser: " + document.getElementById("browser").textContent,
+    "Screen: " + document.getElementById("screen").textContent,
+    "Connection: " + document.getElementById("connection").textContent
+  ].join("\n");
+
+  try {
+    await navigator.clipboard.writeText(details);
+    alert("Copied.");
+  } catch {
+    prompt("Copy details:", details);
+  }
+}
+</script>
+</body>
+</html>
